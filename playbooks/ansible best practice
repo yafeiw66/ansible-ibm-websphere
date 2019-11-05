@@ -1,0 +1,1157 @@
+
+Skip to end of metadata
+Created by Gosse, Russell, last modified about 3 hours ago
+Go to start of metadata
+created by: DevOps Continuous Deployment Team, DevOps & Shared Services
+
+This is the second training session that is a requirement for Ansible Tower onboarding.
+
+Table of Contents
+
+Introduction
+The Ansible Tower Platform
+Ansible Components
+Ansible Content
+What is YAML?
+Modules
+Variables
+Inventory
+Playbooks
+Roles
+Include and Import Files
+Tags - Controlling What Tasks to Run
+Privileged Escalation (using sudo, su, etc.)
+Secrets - Vault Files and Credentials
+Templates - Configuration Management and Jinja2
+Variable Types and Filters
+Conditionals and Tests
+
+
+
+Introduction
+This training is provided for anyone interested in learning the basic concepts of Ansible and Ansible Tower to aid in designing effective automation solutions.
+We tend to focus on application deployments but it will be useful for anyone wishing to use Ansible to develop other types of automation solutions.
+We will use this deck for our live, Skype training sessions which are open to everyone interested. No booking required.
+Reference
+Online Training Schedule
+Ansible Tower How-tos on Confluence
+Ansible Tower Standard Operating Procedure (trouble-shooting)
+Ansible Tower 24/7 Support Info 
+
+
+
+
+
+
+The Ansible Tower Platform
+Ansible CLI
+An agentless command-line automation framework that simplifies the process of deploying, operating and upgrading applications across disparate environments, in one simple language. It can automate everything from bare-metal (VM) provisioning to network devices and application deployment.
+
+Minimal coding skills required which makes automation reachable by a more people.
+
+Ansible CLI runs on Linux but can manage both Unix and Windows hosts.
+
+Ansible CLI provides all the code in the form of Modules which perform specific tasks on Ansible-managed nodes. Modules are written in Python and Powershell.
+
+You don't need to install and learn how to use Ansible CLI. You will use the Ansible Tower UI to run all these commands under-the-covers for you.
+
+You will develop Playbooks which are written as automation code in an easy-to-use markup language - YAML
+
+Playbooks execute Tasks (Modules) in a specific order to achieve the desired end-state of your Ansible-managed nodes.
+
+
+
+Ansible CLI Command and Examples  Expand source
+Ansible Tower
+Tower is a UI that wraps around Ansible CLI to provide enterprise-level features such as:
+
+Role-based access control (RBAC) through AD group membership
+
+Credential storage (including integration with CyberArk as a credential provider)
+
+Running Ansible Playbooks as Jobs
+
+Watch deployments execute in near real-time and be able to download Job output.
+
+A REST API
+
+Running ad-hoc (single Module) commands on Inventory hosts
+
+
+
+Ansible Components
+YAML
+YAML Ain't Markup Language
+
+It's a human friendly data serialization standard for all programming languages and is used to create Ansible Playbooks.
+
+Data structure is made up of lists and dictionaries (hashes)
+
+Based on Python so indentation is strictly enforced as with Python
+
+
+
+YAML Structure  Expand source
+Playbook
+An Ansible automation script written in YAML which is used for executing a series of Tasks (Modules) for simple to complex deployments. A Playbook contains one or more Plays.
+
+
+
+Playbook Layout  Expand source
+ 
+Play
+A section in a Playbook that runs one or more Tasks (Modules) typically against a subset (Group) of an Inventory (hosts). For example, database_servers, app_servers, web_servers, etc.
+
+Keywords can be applied at the Play level that controls how the Play is run and usually cascades down to the related Tasks.
+For example, adding become: true to the Play by default will run all Tasks in the Play using sudo root user.
+By composing a playbook of multiple ‘plays’, it is possible to orchestrate multi-host deployments.
+For example: run certain steps on all hosts the webservers group, then certain steps on the database server group, then more commands back on the webservers group, etc.
+It is a best practice to use the name: keyword at the start of a Play to send useful information to the Playbook's stdout log. This aids in trouble-shooting Playbook failures.
+TIP: You can tokenize the text string with variable references too.
+
+
+Playbook Layout - Plays  Expand source
+Task
+A declaration in a Play that runs a single Module.
+
+By default, Ansible will execute the Module for a Task on all targeted hosts before continuing on to the next Task in the Play.
+The Playbook will fail if a Task fails on any host unless the Task keyword ignore_errors: true is set.
+A Task can be run multiple times using Loops
+A number of keywords can be applied at the Task level
+It is a best practice to use the name: keyword at the start of a Task to send useful information to the Playbook's stdout log. This aids in trouble-shooting Playbook failures.
+TIP: You can tokenize the text string with variable references to make the content more dynamic and relevant to the Playbook at run-time, i.e. information specific to a specific deployment.
+
+
+Playbook Layout - Tasks  Expand source
+Modules
+Python or Powershell code that runs on managed nodes to perform a unit of work as specified in a Playbook Task. These are provided with Ansible but custom ones can also be developed. There are over 2,800 Modules available.
+
+Common Modules:
+
+file - perform operations on files and directorys
+
+copy (win_copy for Windows) - copy files local to remote or between locations on the remote host
+
+yum - use Yum to install packages on Unix hosts
+
+unarchive - untar/unzip archive files
+
+template - update and push out text files (config files) to remote hosts
+
+uri (win_uri) - interface with web services such as downloading files from a web server (Artifactory is a good example)
+
+win_registry - update Windows registry
+
+Handler
+A action that is called by a Task in a Play when a change occurs. Example: restart a service after the Play completes but only on the managed nodes that were changed. The Handler section is coded in the Playbook after all Plays.
+
+
+
+Playbook Layout - Handlers  Expand source
+Keywords
+Keywords are one of several sources for configuring Ansible behavior. They can be applied to: Plays, Tasks, Roles and Blocks.
+
+Blocks
+Blocks allow for logical grouping of tasks and in play error handling. For example, you can apply conditionals and keywords to blocks of Tasks in a Play.
+
+Playbook Layout - Handlers  Expand source
+Roles
+Self-contained, reusable set of Tasks that can be called in any Play to perform a role. For example, a Role to install and configure Nginx that can be used in any Playbook.
+They can be written specifically for a Playbook or can be shared for use in other Playbooks.
+Roles can be shared across Playbooks by storing and maintaining them in BitBucket repositories. Playbooks can then be set up to dynamically pull in the Role during run-time.
+Templates
+Text-based files containing variables and/or Jinaj2 language that Ansible can dynamically update and push out at run-time to managed nodes using the template Module.
+Variables
+Ansibles uses variables (metadata) to control Playbook execution and to define differences between managed nodes and/or environments, i.e. dev vs qa vs prod.
+Adhoc Command
+A single Module execution on a managed node using Ansible CLI or Ansible Tower (Inventory Run Command).
+Vault Files
+A password-encrypted file for storing Ansible variables in YAML format. This allows one to securely store secrets in BitBucket with Ansible content.
+Project (Tower)
+Defines a specific application for deployment in Tower by referencing a BitBucket repository where the Ansible Playbooks (source) are kept.
+Inventory
+A list of all Ansible managed nodes targeted by a Playbook execution. These are kept in BitBucket with the Ansible content and are synchronized with Ansible Tower inventories.
+Job Template (Tower)
+A named definition and set of required and optional parameters for running an Ansible Job (Playbook) in Tower.
+For Example, a required parm would be the Machine Credential used by Ansible to connect to managed nodes. An optional parm would be run-time variable values (extra-vars).
+Workflow Job Template (Tower)
+A named definition and set of parameters for running multiple Job Templates, Inventory Sync Jobs and Project Sync Jobs together for more complex deployments.
+Job (Tower)
+A running instance of a Job Template (Playbook execution/deployment)
+Credentials (Tower)
+
+Named credential definitions used by Jobs (Playbooks). These are created and stored securely in the Tower database and referenced by name but the actual credentials are never exposed.
+The credentials can optionally be sourced from CyberArk.
+
+
+Machine Credentials	Used for SSH or WinRM access to managed nodes.
+SCM Credentials	Used by a Tower Project to access BitBucket to pull down Ansible content (Playbooks) for a specific application.
+Vault Credential	Used by a Playbook to decrypt Ansible Vault files (password-encrypted variable files) during run-time.
+Custom Credentials	Various additional credential type definitions that can be used to securely store secrets such as Sudo passwords, keys, SSL certs and API tokens which can be referenced by a Playbook at run-time.
+
+
+
+
+
+Ansible Content
+The Ansible directory is where all your Playbook and supporting files are kept. It is based on a known directory structure and is kept in a Bitbucket repository, one for each application.
+Ansible Tower pulls a copy of the repository down to the Tower server (Ansible control machine) for execution. Playbooks execute within this directory structure.
+The repository should be used for Ansible source only and not for application source or binaries (binaries should be in Artifactory)
+
+
+Ansible Directory
+ansible.cfg               # the Ansible config file (settings). Use this to override defaults for your Playbook runs. Optional.
+library/                  # if any custom modules, put them here (optional)
+module_utils/             # if any custom module_utils to support modules, put them here (optional)
+filter_plugins/           # if any custom filter plugins, put them here (optional)
+ 
+deploy.yml                # master playbook
+webservers.yml            # playbook for webserver tier (called by deploy.yml)
+dbservers.yml             # playbook for dbserver tier (called by deploy.yml)
+ 
+inventories/
+   app_qa1/
+      hosts               # inventory file for QA1 servers
+      group_vars/
+         group1.yml       # here we assign variables to particular groups
+         group2.yml
+      host_vars/
+         hostname1.yml    # here we assign variables to particular systems
+         hostname2.yml
+ 
+   app_prd/
+      hosts               # inventory file for production environment
+      group_vars/
+         group1.yml       # here we assign variables to particular groups
+         group2.yml
+      host_vars/
+         stagehost1.yml   # here we assign variables to particular systems
+         stagehost2.yml
+roles/
+    common/               # this hierarchy represents a "role" In this example, common is the name of the Role.
+        tasks/            #
+            main.yml      #  <-- tasks file can include smaller files if warranted
+        handlers/         #
+            main.yml      #  <-- handlers file
+        templates/        #  <-- files for use with the template resource
+            ntp.conf.j2   #  <------- templates end in .j2
+        files/            #
+            bar.txt       #  <-- files for use with the copy resource
+            foo.sh        #  <-- script files for use with the script resource
+        vars/             #
+            main.yml      #  <-- variables associated with this role
+        defaults/         #
+            main.yml      #  <-- default lower priority variables for this role
+        meta/             #
+            main.yml      #  <-- role dependencies
+        library/          # roles can also include custom modules
+        module_utils/     # roles can also include custom module_utils
+        lookup_plugins/   # or other types of plugins, like lookup in this case
+ 
+    webtier/              # same kind of structure as "common" was above, done for the webtier role
+    monitoring/           # ""
+    fooapp/               # ""
+/group_vars               # <-- Playbook group variables
+/host_vars                # <-- Playbook host variables
+
+
+Reference
+How to: Create and Use a Custom ansible.cfg File 
+
+
+
+
+
+
+What is YAML?
+
+YAML Ain't Markup Language
+It's a human friendly data serialization standard for all programming languages and is used to create Ansible Playbooks.
+Data structure is made up of lists and dictionaries (hashes):
+
+
+
+
+Reference
+Learn about YAML
+
+
+
+
+Modules
+
+
+Discrete code that executes on managed nodes and which sets the desired state. 
+Invoked in Playbooks by a Task declaration.
+They return JSON output after execution to the Playbook stdout.
+They are idempotent in that they don't perform changes if the managed nodes is already in the desired state.
+Modules can optionally invoke Handlers to run a Task when a change has occurred.
+Custom Modules can be written in any language supported by the managed nodes and must return JSON output.
+There are currently over 2,800 Modules available in Ansible's Module Library.
+Modues for Running OS Commands and Scripts
+command
+Takes the command and executes it on the host. The most secure and predictable.
+shell
+Executes commands through a shell like /bin/sh so you can use pipes etc.
+script
+Runs a local script on a remote node after transferring it.
+raw
+Executes a command without going through the Ansible module subsystem.
+
+Best Practice: Always use Modules instead of home-grown scripts wherever possible.
+Reference:
+Ansible Module Index
+Writing Custom Modules
+
+
+Variables
+
+
+Variables can be defined in several locations.
+They are defined in the YAML format.
+They are referenced in Playbooks in the Jinja templating format - {{ var }}
+When a Playbook runs, Ansible flattens variables down to the host level based on an order of precedence.
+For application deployments, variables allow you define differences in environments such as DEV, QAT, PRF and PRD.
+
+
+port_number: 22
+Simple
+{{ port_number }}
+web_port:
+    http: 80
+    https: 443
+web_port: {http: 80, https: 443}
+Dictionary (hash)
+{{ web_port.http }}
+or
+{{ web_port[‘https’] }}
+port_list:
+     - 22
+     - 80
+     - 443
+port_list: [’22’,’80’,’443’]
+List (Array)
+{{ port_list }}
+{{ port_list[1] }} – returns 80
+
+
+
+
+Run-time (extra-vars)
+Defined when launching a Playbook to set values specific to the deployment.
+Plays and Tasks
+Variables defined within the Playbook.
+Files
+Lists of YAML variables that can be programmatically included in the Playbook at run-time.
+Inventory
+Variable values that are specific to managed nodes.
+Discovered Facts
+Ansible variables that contain managed node information (system information).
+
+
+
+
+extra vars (always win precedence)
+include params
+role (and include_role) params
+set_facts / registered vars
+include_vars
+task vars (only for the task)
+block vars (only for tasks in block)
+role vars (defined in role/vars/main.yml)
+play vars_files
+play vars_prompt
+play vars
+host facts / cached set_facts
+playbook host_vars/*
+inventory host_vars/*
+inventory file or script host vars
+playbook group_vars/*
+inventory group_vars/* 
+playbook group_vars/all
+inventory group_vars/all
+inventory file or script group vars
+role defaults
+
+
+
+
+Reference:
+Ansible Variables
+System Fact Variables
+Register Variables
+Filters
+How to: Use Ansible Tower Custom Credentials for Secrets 
+
+
+
+
+Inventory
+
+
+An Inventory is a collection of managed nodes (hosts) with associated data (variables) and groupings that Ansible can connect to and manage.
+They must be defined in Ansible Tower where Playbooks run but are sourced from the Ansible Core directory in Bitbucket.
+Ansible Tower can be set up to automatically synchronize its Inventories (Source from a Project) with the appropriate Inventory in your Ansible Core Directory.
+The Inventory defined in the Ansible Directory in Bitbucket becomes the 'book of record' for all Inventories for the application.
+Inventory updates should be applied in the Ansible content directory and not in the Ansible Tower Inventory directly.
+
+
+Important Note About Sourcing Inventories From Projects (BitBucket)
+
+Once you have an Inventory set up to synchronize from a Tower Project (Source from a Project), please be aware that we have a daily Tower maintenance Job that will remove hosts from these Inventory types. We do this in order to manage Tower licensing which is based on a cost for each unique host that is defined in all Ansible Tower Inventories. When set up correctly, the Ansible Tower Inventories will be synchronized with your Ansible Directory (as stored on BitBucket) each time a Job Template is run against that Inventory.
+
+
+Best Practice: Create an Inventory for each application environment.
+Inventory Strucuture
+Hosts File
+An INI-formatted file containing a list of all target hosts for an environment, i.e. QA1
+Groups
+Logical collections of hosts defined in the Hosts File, e.g. app_servers, which are referenced by Plays in a Playbook
+Variables
+Metadata defined at the Inventory, Group or Host levels in YAML files
+
+
+
+
+Inventory Host File (INI format)
+# All hosts
+# Use Full-qualified domain names (FQDN) for managed nodes where possible
+app-bccldvdb01.bmogc.net
+app-bccldvdb02.bmogc.net
+app-bccldvweb08.bmogc.net
+app-bccldvweb0[1:7].bmogc.net
+app-bccldvapp01.bmogc.net
+10.194.5.89
+ 
+# Groups
+# Nodes can be assigned to multiple Groups
+# Reserved Ansible Groups: all and ungrouped
+ 
+app-bccldvapp01.bmogc.net   # ungrouped host
+ 
+[dbase]
+app-bccldvdb01.bmogc.net
+app-bccldvdb02.bmogc.net
+10.194.5.89
+ 
+[jboss]
+app-bccldvweb08.bmogc.net
+ 
+[apache]
+app-bccldvweb0[1:7].bmogc.net  # using a range value
+ 
+[web:children]     # <-- Creating a sub-group called web with the :children declaration
+jboss
+apache
+
+
+
+
+Inventory Directory Structure
+In this directory layout, files matching Group or Node names are processed by Ansible at run-time. File extensions are ignored. Groups are case-sensitive.
+Ansible will process any file matches and ignore all others. You won't get an error message if you misspelled any file names.
+At a minimum, you need a Host file. Group and Host vars are optional.
+ 
+ 
+inventories/              # this folder is just a suggestion for organizing your Inventories and is not mandatory
+   app_dv1/               # You do need to keep each Inventory in it's own folder, one for each target environment
+      hosts_dv1           # inventory Host file for DV1 (DEV1) servers
+      group_vars/
+         all.yml          # variables assigned to all nodes in the Inventory. Variables here are overridden by any Group or Host variables of the same name.
+         ungrouped.yml    # variables assigned only to nodes not in any Groups
+         web.yml          # variables for nodes defined in the web Group
+         apache.yml       # variables for nodes defined in the apache Group
+         jboss.yml        # variables for nodes defined in the jboss Group
+      host_vars/
+         app-bccldvapp01.bmogc.net.yml    # here we assign variables to specific managed nodes
+         10.194.5.89.yml
+ 
+ 
+Playbook group_vars and host_vars are optional directories that, if found at run-time, will be processed by Ansible in addition to the target Inventory used.
+Any group or host files here that match groups or hosts defined in the target Inventory are processed.
+These can be used for defining global variables for deployments to any target Inventory (environment).
+ 
+group_vars/      # Playbook group variables that can override Inventory group variables of the same name.
+host_vars/       # Playbook host variables that can override Inventory group variables of the same name.
+
+
+
+
+Alternate Inventory Directory Structure
+In this alternative directory layout, sub-folders are created to match each Group and/or Host with any number of variables files in each as needed.
+All files in each matched sub-folder will be processed at run-time, regardless of their names.
+ 
+ 
+inventories/
+   app_dv1/
+      hosts_dv1           # inventory Host file for DV1 (DEV1) servers
+      all/
+         var_file1.yml         
+         var_file2.yml
+      ungrouped/
+         vars.yml
+      web/
+         webvars1.yml
+         webvars2.yml
+      apache/
+         vars.yml
+      jboss/
+         file1.yml
+         file2.yml
+         othervars.yml
+      app-bccldvapp01.bmogc.net/
+         vars.yml
+      10.194.5.89/
+         hostvars.yml
+
+
+
+
+
+
+Reference
+Ansible Inventories
+Ansible Tower Inventories
+How To: Source Tower Inventories from an Project (BitBucket)
+
+
+
+
+Playbooks
+Playbooks list all the Tasks required to set managed nodes to the desired state for an application deployment (or any other kind).
+Written in YAML as an automation language, not a programming one. Ansible provides the code with Modules.
+Playbooks must always be run through Ansible Tower as this is the BMO standard for any automated deployments.
+Ansible CLI is not required for developing and testing Playbooks. This can be through Ansible Tower.
+
+
+
+
+
+
+Best Practice: Always develop and use one master Playbook to deploy an application to any environment - Dev to Production. This ensures consistency, reliability and quality.
+
+
+Design Considerations
+Ansible provides many ways to design an automaton solution. Carefully consider all the core features as shown in this training when designing your automation.
+A master Playbook for an application deployment is possible with careful consideration on where to define variables, such as in Inventories where you can define environmental differences. i.e. DEV vs QA vs PROD.
+Playbooks should not contain any static variable values. It should draw in metadata from outside sources such as Inventories, files, run-time (extra vars), etc.
+Always use Modules where possible and avoid using the Command or Shell Modules. Playbooks should be idempotent
+More complex automation can be broken out into separate files. You should always have a master Playbook but it can be designed to call (include) external files containing variables, Roles, Tasks and even other Playbooks (Plays).
+Roles are a great way to tame a complex Playbook and to encourage collaborative development. Roles are meant to be reusable and even shared for use in other Playbooks.
+
+
+
+
+
+
+Playbook Anatomy
+A Playbook must contain at least one Play but can have as many as you need.
+Each Play targets specific managed nodes (or all of them). Typically, nodes (hosts) are referenced by an Inventory Group name.
+Keywords or Directives control how the Play or Tasks executes
+Tasks execute in the order listed within a Play but can include conditionals or 'tagging' to determine whether they run or not.
+You can use Blocks to group Tasks together in a Play.
+Handlers are optionally defined at the bottom of a Playbook (after all Plays) and are executed only after all Play Tasks have completed.
+
+What Ansible Core Engine Requires to Run a Playbook 
+A target Inventory (environment)
+Credentials to access the target managed nodes
+The Playbook to run
+Optional parameters such as extra-vars (run-time variables), tag names, verbosity, etc.
+
+
+
+ 
+
+
+Simple NGINX Playbook
+# In keeping things simple, this example assumes the epel repo is enabled on each node
+---
+- name: Ensure nginx is installed and started with wsgi
+  hosts: web
+  become: yes
+  vars:
+    nginx_packages:
+      - nginx
+      - python-pip
+      - python-devel
+      - gcc
+    nginx_test_message: This is a test message
+    nginx_webserver_port: 80
+ 
+  tasks:
+    - name: Ensure nginx packages are present
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ nginx_packages }}"
+      notify: restart-nginx-service
+ 
+    - name: Ensure uwsgi package is present
+      pip:
+        name: uwsgi
+        state: present
+      notify: restart-nginx-service
+ 
+    - name: Ensure latest default.conf is present
+      template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        backup: yes
+      notify: restart-nginx-service
+ 
+    - name: Ensure latest index.html is present
+      template:
+        src: templates/index.html.j2
+        dest: /usr/share/nginx/html/index.html
+ 
+    - name: Ensure nginx service is started and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+ 
+    # smoke test that nginx came up and is serving home page
+    - name: Ensure proper response from localhost can be received
+      uri:
+        url: "http://localhost:{{ nginx_webserver_port | default(80) }}/"
+        return_content: yes
+      register: response
+      until: 'nginx_test_message in response.content'
+      retries: 10
+      delay: 1
+ 
+  handlers:
+    - name: restart-nginx-service
+      service:
+        name: nginx
+        state: restarted
+
+
+Reference:
+Keywords (directives)
+
+
+
+
+Roles
+
+
+Roles are reusable sets of self-contained Tasks created in a known directory structure that includes their own variables, handlers, templates, files and dependency Roles.
+Roles can be created specifically for the Playbook but can also be portable and used with other Playbooks, shared within a Team or across all development Teams.
+Encourages the collaborative development of generic code.
+Reduces complexity of a Playbook
+Can be called any number of times by a Play or Task.
+Used for repetitive complex tasks.
+
+
+Role Directory Structure
+roles/                   
+    requirements.yml      # optional way of including Roles from a BitBucket repository
+    common/               # this hierarchy represents a "role" In this example, common is the name of the Role.
+        tasks/            #
+            main.yml      #  <-- tasks file can include smaller files if warranted
+        handlers/         #
+            main.yml      #  <-- handlers file
+        templates/        #  <-- files for use with the template resource
+            ntp.conf.j2   #  <------- templates end in .j2
+        files/            #
+            bar.txt       #  <-- files for use with the copy resource
+            foo.sh        #  <-- script files for use with the script resource
+        vars/             #
+            main.yml      #  <-- variables associated with this role
+        defaults/         #
+            main.yml      #  <-- default lower priority variables for this role
+        meta/             #
+            main.yml      #  <-- role dependencies
+        library/          # roles can also include custom modules
+        module_utils/     # roles can also include custom module_utils
+        lookup_plugins/   # or other types of plugins, like lookup in this case
+  
+    webtier/              # same kind of structure as "common" was above, done for the webtier role
+    monitoring/           # ""
+    fooapp/               # ""
+
+
+
+
+
+
+ 
+
+
+
+
+NGINX Role Directory Structure
+deploy.yml
+inventories/
+    dv1/
+        hosts_dv1
+        group_vars/
+           web.yml
+           all.yml
+roles/
+    nginx-simple/        
+        tasks/           
+            main.yml
+            remove.yml     
+        handlers/        
+            main.yml    
+        templates/      
+            index.html.j2
+            nginx.conf.j2  
+        vars/           
+            main.yml    
+        defaults/      
+            main.yml
+
+
+
+
+Content of Role Files
+
+
+ deploy.yml
+ roles/nginx-simple/tasks/main.yml
+ roles/nginx-simple/tasks/remove.yml
+ roles/nginx-simple/handlers/main.yml
+ roles/nginx-simple/templates/index.html.j2
+ roles/nginx-simple/templates/nginx.conf.j2
+ roles/nginx-simple/vars/main.yml
+ roles/nginx-simple/defaults/main.yml
+
+
+Calling a Role
+- name: Ensure nginx is installed and started via role
+  hosts: web
+  become: yes
+  roles:
+    - { role: nginx-simple, nginx_webserver_port: 443 }
+
+OR
+
+  tasks:
+    - name: Task that ensures nginx is installed and started via role
+      include_role:
+        name: nginx-simple
+        vars:
+          nginx_webserver_port: 443
+Including Roles from Bitbucket
+You can store Roles on BitBucket to be shared within your Team and with everyone else using Tower as well. 
+
+Encourages the development of generic, reusable Roles
+Roles are maintained in one place and don't need to be copied to the Ansible Core directory for use
+Use the optional requirements.yml file to pull in Roles from Bitbucket during run-time.
+BMO Galaxy is a Bitbucket Project where public Roles are kept for use by anyone.
+
+
+The requirements.yml File
+---
+ 
+## BMO Galaxy - artifactoryGet Role
+## Add this to roles/requirements.yml in the Ansible Core directory
+ 
+- name: artifactoryGet
+  src: https://bitbucket.bmogc.net/scm/bmogalaxy/artifactory.git
+  scm: git
+  version: master    # <-- branch or tag name
+
+
+Reference
+Roles
+BMO Galaxy - Public Roles
+
+
+
+
+Include and Import Files
+
+
+Includes and imports allow users to break up large playbooks into smaller files, which can be used across multiple parent playbooks or even multiple times within the same Playbook.
+Includes are dynamic while Imports are static which are handled differently:
+include_*
+Processed during Playbook execution
+Use with Loops and conditionals. Conditionals apply to the Task calling the include_*
+Import_*
+Processed during Playbook parsing (included before the Playbook executes)
+Can’t use loops. Conditionals apply to the tasks within the file.
+Available imports and includes:
+import_playbook
+import_role 
+import_tasks
+include_role
+include_tasks
+include_vars
+
+
+Include and Import
+- name: Play
+  hosts: web_servers
+  vars_files:
+    - web_vars.yml   # path relative to Ansible dir
+  tasks:
+    - name: Including Environment Specific Vars
+      include_vars: “{{ inventory }}.yml”
+    - name: read tasks from a file
+      include_tasks: tasks_cleanup.yml
+ 
+ 
+- name: include and run another Playbook (Plays)
+  import_playbook: another_playbook.yml
+
+
+Reference
+Import and Includes
+
+
+
+
+Tags - Controlling What Tasks to Run
+
+
+Tags are labels for Tasks that can be selected at Playbook run-time to be run and/or skipped. This provides full or partial deployment capability in your Playbook.
+Only applies to Tasks (in Plays, files, Roles, etc.)
+When launching a Playbook in Tower (Job Template/Job), you can specify values for Tags:
+tagged – only run Tasks with a Tag, regardless of the Tag names
+untagged – only run Tasks with no Tags
+List of Tags by name to run and/or skip
+All Tasks are run by default when no Tags are specified at run-time – full deployment
+Assigning a the same Tag name to all Tasks in a Play allows you to control execution of the entire Play
+
+
+Using Tags
+- name: Tagging Task at Play level
+  host: web_severs
+  tags: [web,configuration]
+  tasks:
+    - name: Combined Tag names
+      template:
+        src: templates/src.j2
+        dest: /etc/foo.conf
+      tags: [UI_install]
+ 
+    - name: Always run this Task
+      ...
+      tags:
+        - always  # force run
+ 
+ 
+    - name: Tagging all Tasks in an included Role
+      include_role:
+        name: cleanup
+      tags: [initial]
+
+
+Reference:
+Tags
+
+
+
+
+Privileged Escalation (using sudo, su, etc.)
+
+
+
+
+Privilege Escalation
+- hosts: web
+  vars:
+    ansible_become_pass: “{{ ct_secret1 }}”  # required to be set when a password is needed for become
+  become: true  # defaults to root user. This can be changed in ansible.cfg. It's used to turn on/off sudo access.
+  tasks:
+    - name: start apache
+      service: name=apache state=started
+      become_user: "{{ http_admin }}"
+      become_method: su
+ 
+    - name: Create directory
+      file:
+        path: “{{delivery_dir}}”
+        state: directory
+        mode: 0755
+      become: false    # revert to ansible_user before this Task runs (turn off sudo)
+
+
+Reference:
+Privileged Escalation
+
+
+
+
+Secrets - Vault Files and Credentials
+
+
+At times you will need to store secret values such as passwords in variables that your Playbook needs for such things as sudo or su (privilege escalation).
+You can store secrets in variables in one of two ways:
+Use Ansible Vault files – encrypted variable files that are stored in BitBucket along with your Ansible source
+Use the custom Credential Types now available in Ansible Tower – store variables encrypted in Tower with RBAC controls.
+Both methods are good except Credentials in Tower are easier to create and use.
+To create a Vault file requires access to Ansible CLI to use the ansible-vault command. See the reference link below on how to create a Vault file if you don't have access to Ansible CLI.
+Potential Secret Exposure and How to Prevent It
+If you use either Vault files or Tower Credentials, you need to be aware that these variables can be exposed in the stdout log.
+You can mitigate this by adding the no_log: true directive to the Task that references secret variables.
+
+
+Using no_log to Prevent Exposed Secrets
+When using a Vault file:
+ 
+ 
+- name: secret task
+  include_vars: files/secrets_vault.yml
+  shell: /usr/bin/do_something --value={{ secret_value }}
+  no_log: True
+ 
+ 
+When using a Tower credential:
+ 
+ 
+- name: secret task
+  shell: /usr/bin/do_something --value={{ ct_secret1 }}
+  no_log: True
+
+
+Reference:
+Vault Files
+Creating a Vault File
+How to: Use Ansible Tower Custom Credentials for Secrets 
+
+
+
+
+Templates - Configuration Management and Jinja2
+
+
+Dynamically-built configuration files using Jinja2 templating
+Master configuration files – Templates – are kept in the Ansible directory
+Key values in the configuration file are tokenized with variable references – {{ var }}
+Use the template Module to update the configuration file and push it out to the target hosts
+Variables are replaced with environment-specific values defined in the Inventory
+You can template any text-based file.
+You can include the Jinja2 Templating language to dynamically build content.
+
+
+Tokenized Configuration File (Template)
+Content of the Template file (XML):
+ 
+ 
+<server description="BMO Mobile Banking Server">
+  <httpEndpoint id="defaultHttpEndpoint"
+    host=“{{ http_host }}”
+    httpPort=“{{ http_port | default(80) }}”
+    httpsPort=“{{ https_port | default(443) }}” >
+    <sslOptions  id="defaultSSLOptions" sslRef="defaultSSLConfig" />
+    <tcpOptions soReuseAddr="true"></tcpOptions>
+    <httpOptions maxKeepAliveRequests="-1" persistTimeout="60s" readTimeout="30s“                 writeTimeout="30s"></httpOptions>
+    <accessLogging logFormat="%h %u {%t} [%r?%q] %s %b %D" maxFiles="0"/>
+  </httpEndpoint>
+</server>
+ 
+Task to update and push out the Template to the managed node using the template Module
+ 
+ 
+- name: Process template config file
+  template:
+    src: templates/server.xml
+    dest: /opt/apps/IBM/server.xml
+    mode: 0755
+Using Jinja Language in Playbooks
+- inv_export_list:
+    - inventory_qa
+    - inventory_prd
+    - inventory_pf1
+ 
+ 
+- name: Add list of Inventories to temp file
+  copy:
+    content: |
+      {% for inv in inv_export_list %}
+      {{ inv }}
+      {% endfor %}
+    dest: "{{ inventory_temp_file.path }}"
+
+
+Reference
+Templating With Jinja2
+Template Module
+Jinja2 Templating Language
+
+
+Variable Types and Filters
+
+Fact Variables
+Ansible can gather system information about the manage nodes during Playbook execution and populate variables that can be referenced in a Play.
+To enable fact gathering, set the Play keyword:
+gather_facts: true
+This tells Ansible to inject and run the setup Module as the first Task in the Play to gather system facts.
+Local fact variables can also be defined on manage nodes which can be retrieved by the setup Module as well.
+
+
+Output from the Setup Module (Facts)
+"ansible_facts": {
+      "ansible_all_ipv4_addresses": [
+          "10.193.12.224"
+      ],
+      "ansible_all_ipv6_addresses": [
+          "fe80::250:56ff:fe90:aaae"
+      ],
+      "ansible_apparmor": {
+          "status": "disabled"
+      },
+      "ansible_architecture": "x86_64",
+      "ansible_bios_date": "04/05/2016",
+      "ansible_bios_version": "6.00",
+      "ansible_cmdline": {
+          "BOOT_IMAGE": "/vmlinuz-3.10.0-957.10.1.el7.x86_64",
+          "LANG": "en_US.UTF-8",
+          "audit": "1",
+          "crashkernel": "auto",
+          "elevator": "noop",
+          "quiet": true,
+          "rd.lvm.lv": "vgsys/swap",
+          "rhgb": true,
+          "ro": true,
+          "root": "/dev/mapper/vgsys-root"
+      },
+      "ansible_date_time": {
+          "date": "2019-04-03",
+          "day": "03",
+          "epoch": "1554326617",
+          "hour": "17",
+          "iso8601": "2019-04-03T21:23:37Z",
+          "iso8601_basic": "20190403T172337051222",
+          "iso8601_basic_short": "20190403T172337",
+          "iso8601_micro": "2019-04-03T21:23:37.051424Z",
+          "minute": "23",
+          "month": "04",
+          "second": "37",
+          "time": "17:23:37",
+          "tz": "EDT",
+          "tz_offset": "-0400",
+          "weekday": "Wednesday",
+          "weekday_number": "3",
+          "weeknumber": "13",
+          "year": "2019"
+      },
+      "ansible_default_ipv4": {
+          "address": "10.193.12.224",
+          "alias": "ens192",
+          "broadcast": "10.193.13.255",
+          "gateway": "10.193.12.1",
+          "interface": "ens192",
+          "macaddress": "00:50:56:90:aa:ae",
+          "mtu": 1500,
+          "netmask": "255.255.254.0",
+          "network": "10.193.12.0",
+          "type": "ether"
+      },
+      "ansible_default_ipv6": {},
+      "ansible_distribution": "RedHat",
+      "ansible_distribution_file_parsed": true,
+      "ansible_distribution_file_path": "/etc/redhat-release",
+      "ansible_distribution_file_search_string": "Red Hat",
+      "ansible_distribution_file_variety": "RedHat",
+      "ansible_distribution_major_version": "7",
+      "ansible_distribution_release": "Maipo",
+      "ansible_distribution_version": "7.6",
+      "ansible_dns": {
+          "nameservers": [
+              "10.254.90.17",
+              "10.225.224.17"
+          ]
+      }, ...
+
+
+Register Variables
+Use register variables to store the output from a Task Module
+You can parse this data to retrieve variable values that you can use in subsequent Tasks and conditionals
+
+
+Using Register Variables
+- name: get version
+  shell: httpd –v | grep version
+  register: result
+ 
+- name: print variable
+  debug:
+    var: result
+ 
+Results of debug Task:
+ 
+ 
+"result": {
+  "changed": true,
+  "cmd": "httpd -v|grep version|awk    '{print $3}'|cut -f2 -d'/'",
+  "delta": "0:00:00.018246",
+  "end": "2016-05-21 21:05:03.504298",
+  "rc": 0,
+  "start": "2016-05-21 21:05:03.486052",
+  "stderr": "",
+  "stdout": "2.2.15",
+  "stdout_lines": [
+  "2.2.15“
+}
+ 
+- name: Run Task on condition
+  service:
+    name: httpd
+    state: stop
+  when: result.rc == "0" and result.stderr == ""
+
+
+Transforming Variables with Jinja2 Filters
+Filters are from Jinja2, and are used for transforming data inside a template expression (variable).
+Format is:
+{{ variable_name | filter(parameters) }}
+
+
+Sample Filters
+# set unset variable to a default value (5 in this example)
+{{ some_variable | default(5) }}
+ 
+ 
+# parse a URL string
+url: http://user@www.acme.com:9000
+{{ url | urlsplit('hostname') }} --> www.acme.com
+{{ url | urlsplit('port') }} --> 9000
+ 
+ 
+# get the base file name of a path:
+path: “/etc/asdf/foo.txt”
+{{ path | basename }} --> foo.txt
+ 
+ 
+# get the maximum value from a list variable:
+numlist:
+  - 3
+  - 9
+  - 23
+  - 11
+{{ numlist | max }} --> 23
+ 
+ 
+# Get a random number from 0 to 100 but in steps of 10:
+{{ 101 | random(step=10) }} --> 70
+Reference:
+System Fact Variables
+Register Variables
+Filters
+How to: Use Ansible Tower Custom Credentials for Secrets 
+
+
+Conditionals and Tests
+
+
+
+
+Conditionals and Tests
+- name: Fail task when both files are identical
+  raw: diff foo/file1 bar/file2
+  register: diff_cmd
+  failed_when: diff_cmd.rc == 0 or diff_cmd.rc >= 2
+ 
+- name: Run another command if no errors in previous
+  command: /usr/bin/example-command -a -b -c
+  when: diff_cmd is failed or (diff_cmd is successful and 'WARN' in diff_cmd.stdout)
+ 
+- name: Run if flag = true (boolean)
+  command: /usr/bin/example-command -a -b -c
+  when: flag
